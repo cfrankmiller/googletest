@@ -22,7 +22,6 @@ project "googletest"
   files {
     "googlemock/src/gmock-all.cc",
     "googletest/src/gtest-all.cc",
-    "googlemock/src/gmock_main.cc",
   }
 
   includedirs {
