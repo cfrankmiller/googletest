@@ -451,7 +451,7 @@ GTEST_API_ TypeId GetTestTypeId();
 // of a Test object.
 class TestFactoryBase {
  public:
-  virtual ~TestFactoryBase() {}
+  virtual ~TestFactoryBase() = default;
 
   // Creates a test instance to run. The instance is both created and destroyed
   // within TestInfoImpl::Run()
@@ -801,10 +801,10 @@ class TypeParameterizedTestSuite {
 
     // Next, recurses (at compile time) with the tail of the test list.
     return TypeParameterizedTestSuite<Fixture, typename Tests::Tail,
-                                      Types>::Register(prefix, code_location,
-                                                       state, case_name,
-                                                       SkipComma(test_names),
-                                                       type_names);
+                                     Types>::Register(prefix, code_location,
+                                                      state, case_name,
+                                                      SkipComma(test_names),
+                                                      type_names);
   }
 };
 
@@ -1414,28 +1414,28 @@ class NeverThrown {
 
 #endif  // GTEST_HAS_EXCEPTIONS
 
-#define GTEST_TEST_THROW_(statement, expected_exception, fail)              \
-  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                             \
+#define GTEST_TEST_THROW_(statement, expected_exception, fail) \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
   if (::testing::internal::TrueWithString gtest_msg{}) {                    \
-    bool gtest_caught_expected = false;                                     \
-    try {                                                                   \
-      GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);            \
+    bool gtest_caught_expected = false; \
+    try { \
+      GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
     } catch (expected_exception const&) {                                   \
-      gtest_caught_expected = true;                                         \
-    }                                                                       \
+      gtest_caught_expected = true; \
+    } \
     GTEST_TEST_THROW_CATCH_STD_EXCEPTION_(statement, expected_exception)    \
-    catch (...) {                                                           \
+    catch (...) { \
       gtest_msg.value = "Expected: " #statement                             \
                         " throws an exception of type " #expected_exception \
                         ".\n  Actual: it throws a different type.";         \
-      goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__);           \
-    }                                                                       \
-    if (!gtest_caught_expected) {                                           \
+      goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
+    } \
+    if (!gtest_caught_expected) { \
       gtest_msg.value = "Expected: " #statement                             \
                         " throws an exception of type " #expected_exception \
                         ".\n  Actual: it throws nothing.";                  \
-      goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__);           \
-    }                                                                       \
+      goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
+    } \
   } else /*NOLINT*/                                                         \
     GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__)                   \
         : fail(gtest_msg.value.c_str())
@@ -1531,7 +1531,7 @@ class NeverThrown {
                 "test_name must not be empty");                               \
   class GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)                    \
       : public parent_class {                                                 \
-   public:                                                                    \
+ public:\
     GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() = default;           \
     ~GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() override = default; \
     GTEST_DISALLOW_COPY_AND_ASSIGN_(GTEST_TEST_CLASS_NAME_(test_suite_name,   \
@@ -1539,14 +1539,14 @@ class NeverThrown {
     GTEST_DISALLOW_MOVE_AND_ASSIGN_(GTEST_TEST_CLASS_NAME_(test_suite_name,   \
                                                            test_name));       \
                                                                               \
-   private:                                                                   \
+ private:\
     void TestBody() override;                                                 \
-    static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;     \
-  };                                                                          \
-                                                                              \
+  static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;\
+};\
+\
   ::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_suite_name,          \
                                                     test_name)::test_info_ =  \
-      ::testing::internal::MakeAndRegisterTestInfo(                           \
+    ::testing::internal::MakeAndRegisterTestInfo(\
           #test_suite_name, #test_name, nullptr, nullptr,                     \
           ::testing::internal::CodeLocation(__FILE__, __LINE__), (parent_id), \
           ::testing::internal::SuiteApiResolver<                              \
