@@ -458,7 +458,7 @@ class TestFactoryBase {
   virtual Test* CreateTest() = 0;
 
  protected:
-  TestFactoryBase() {}
+  TestFactoryBase() = default;
 
  private:
   GTEST_DISALLOW_COPY_AND_ASSIGN_(TestFactoryBase);
@@ -566,7 +566,7 @@ struct SuiteApiResolver : T {
 //
 // Arguments:
 //
-//   test_suite_name:  name of the test suite
+//   test_suite_name:   name of the test suite
 //   name:             name of the test
 //   type_param:       the name of the test's type parameter, or NULL if
 //                     this is not a typed or a type-parameterized test.
@@ -801,10 +801,10 @@ class TypeParameterizedTestSuite {
 
     // Next, recurses (at compile time) with the tail of the test list.
     return TypeParameterizedTestSuite<Fixture, typename Tests::Tail,
-                                     Types>::Register(prefix, code_location,
-                                                      state, case_name,
-                                                      SkipComma(test_names),
-                                                      type_names);
+                                      Types>::Register(prefix, code_location,
+                                                       state, case_name,
+                                                       SkipComma(test_names),
+                                                       type_names);
   }
 };
 
@@ -1531,7 +1531,7 @@ class NeverThrown {
                 "test_name must not be empty");                               \
   class GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)                    \
       : public parent_class {                                                 \
- public:\
+   public:                                                                    \
     GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() = default;           \
     ~GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() override = default; \
     GTEST_DISALLOW_COPY_AND_ASSIGN_(GTEST_TEST_CLASS_NAME_(test_suite_name,   \
@@ -1539,14 +1539,14 @@ class NeverThrown {
     GTEST_DISALLOW_MOVE_AND_ASSIGN_(GTEST_TEST_CLASS_NAME_(test_suite_name,   \
                                                            test_name));       \
                                                                               \
- private:\
+   private:                                                                   \
     void TestBody() override;                                                 \
-  static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;\
-};\
-\
+    static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;     \
+  };                                                                          \
+                                                                              \
   ::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_suite_name,          \
                                                     test_name)::test_info_ =  \
-    ::testing::internal::MakeAndRegisterTestInfo(\
+      ::testing::internal::MakeAndRegisterTestInfo(                           \
           #test_suite_name, #test_name, nullptr, nullptr,                     \
           ::testing::internal::CodeLocation(__FILE__, __LINE__), (parent_id), \
           ::testing::internal::SuiteApiResolver<                              \
