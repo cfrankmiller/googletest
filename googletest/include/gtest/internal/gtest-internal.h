@@ -446,7 +446,7 @@ class TestFactoryBase {
   virtual Test* CreateTest() = 0;
 
  protected:
-  TestFactoryBase() {}
+  TestFactoryBase() = default;
 
  private:
   GTEST_DISALLOW_COPY_AND_ASSIGN_(TestFactoryBase);
@@ -1355,7 +1355,7 @@ constexpr bool InstantiateTypedTestCase_P_IsDeprecated() { return true; }
   class GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)                    \
       : public parent_class {                                                 \
    public:                                                                    \
-    GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() {}                   \
+    GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() = default;           \
                                                                               \
    private:                                                                   \
     virtual void TestBody();                                                  \
