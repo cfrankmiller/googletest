@@ -86,6 +86,7 @@ const char kCatchExceptionsFlag[] = "catch_exceptions";
 const char kColorFlag[] = "color";
 const char kFailFast[] = "fail_fast";
 const char kFilterFlag[] = "filter";
+const char kTagFlag[] = "tag";
 const char kListTestsFlag[] = "list_tests";
 const char kOutputFlag[] = "output";
 const char kBriefFlag[] = "brief";
@@ -168,6 +169,7 @@ class GTestFlagSaver {
     death_test_use_fork_ = GTEST_FLAG(death_test_use_fork);
     fail_fast_ = GTEST_FLAG(fail_fast);
     filter_ = GTEST_FLAG(filter);
+    tag_ = GTEST_FLAG(tag);
     internal_run_death_test_ = GTEST_FLAG(internal_run_death_test);
     list_tests_ = GTEST_FLAG(list_tests);
     output_ = GTEST_FLAG(output);
@@ -191,6 +193,7 @@ class GTestFlagSaver {
     GTEST_FLAG(death_test_style) = death_test_style_;
     GTEST_FLAG(death_test_use_fork) = death_test_use_fork_;
     GTEST_FLAG(filter) = filter_;
+    GTEST_FLAG(tag) = tag_;
     GTEST_FLAG(fail_fast) = fail_fast_;
     GTEST_FLAG(internal_run_death_test) = internal_run_death_test_;
     GTEST_FLAG(list_tests) = list_tests_;
@@ -216,6 +219,7 @@ class GTestFlagSaver {
   bool death_test_use_fork_;
   bool fail_fast_;
   std::string filter_;
+  std::string tag_;
   std::string internal_run_death_test_;
   bool list_tests_;
   std::string output_;
@@ -405,6 +409,10 @@ class GTEST_API_ UnitTestOptions {
   // suite name and the test name.
   static bool FilterMatchesTest(const std::string& test_suite_name,
                                 const std::string& test_name);
+
+  // Returns true if and only if the user-specified tag matches the test
+  // tag.
+  static bool TagMatchesTest(const std::string& test_tag);
 
 #if GTEST_OS_WINDOWS
   // Function for supporting the gtest_catch_exception flag.

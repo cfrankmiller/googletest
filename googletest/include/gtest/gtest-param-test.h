@@ -411,7 +411,7 @@ internal::CartesianProductHolder<Generator...> Combine(const Generator&... g) {
   return internal::CartesianProductHolder<Generator...>(g...);
 }
 
-#define TEST_P(test_suite_name, test_name)                                     \
+#define TEST_P_(test_suite_name, test_name, test_tag)                          \
   class GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)                     \
       : public test_suite_name {                                               \
    public:                                                                     \
@@ -427,6 +427,7 @@ internal::CartesianProductHolder<Generator...> Combine(const Generator&... g) {
               ::testing::internal::CodeLocation(__FILE__, __LINE__))           \
           ->AddTestPattern(                                                    \
               GTEST_STRINGIFY_(test_suite_name), GTEST_STRINGIFY_(test_name),  \
+              GTEST_STRINGIFY_(test_tag),                                      \
               new ::testing::internal::TestMetaFactory<GTEST_TEST_CLASS_NAME_( \
                   test_suite_name, test_name)>(),                              \
               ::testing::internal::CodeLocation(__FILE__, __LINE__));          \
@@ -440,6 +441,14 @@ internal::CartesianProductHolder<Generator...> Combine(const Generator&... g) {
                              test_name)::gtest_registering_dummy_ =            \
       GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)::AddToRegistry();     \
   void GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)::TestBody()
+
+#if !GTEST_DONT_DEFINE_TEST
+#define TEST_P(test_suite_name, test_name) \
+  TEST_P_(test_suite_name, test_name, "ALL")
+
+#define TEST_P_C(test_suite_name, test_name, test_tag) \
+  TEST_P_(test_suite_name, test_name, test_tag)
+#endif
 
 // The last argument to INSTANTIATE_TEST_SUITE_P allows the user to specify
 // generator and an optional function or functor that generates custom test name
