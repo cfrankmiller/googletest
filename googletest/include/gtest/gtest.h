@@ -109,6 +109,14 @@ GTEST_DECLARE_bool_(fail_fast);
 // the tests to run. If the filter is not given all tests are executed.
 GTEST_DECLARE_string_(filter);
 
+// This flag sets up the tag to select by name using a glob pattern
+// the tests to run. If the tag is not given all tests are executed.
+GTEST_DECLARE_string_(tag);
+
+// This flag sets up the size to select by name using a glob pattern
+// the tests to run. If the size is not given only small tests are executed.
+GTEST_DECLARE_string_(size);
+
 // This flag controls whether Google Test installs a signal handler that dumps
 // debugging information when fatal signals are raised.
 GTEST_DECLARE_bool_(install_failure_signal_handler);
@@ -718,6 +726,12 @@ class GTEST_API_ TestInfo {
   // Returns the test name.
   const char* name() const { return name_.c_str(); }
 
+  // Returns the test tag.
+  const char* tag() const { return tag_.c_str(); }
+
+  // Returns the test size.
+  const char size() const { return size_; }
+
   // Returns the name of the parameter type, or NULL if this is not a typed
   // or a type-parameterized test.
   const char* type_param() const {
@@ -761,9 +775,10 @@ class GTEST_API_ TestInfo {
 
   // Returns true if and only if this test will appear in the XML report.
   bool is_reportable() const {
-    // The XML report includes tests matching the filter, excluding those
-    // run in other shards.
-    return matches_filter_ && !is_in_another_shard_;
+    // The XML report includes tests matching the filter, size, tag, excluding
+    // those run in other shards.
+    return matches_filter_ && matches_size_ &&
+           matches_tag_ && !is_in_another_shard_;
   }
 
   // Returns the result of the test.
@@ -778,15 +793,17 @@ class GTEST_API_ TestInfo {
   friend class internal::UnitTestImpl;
   friend class internal::StreamingListenerTest;
   friend TestInfo* internal::MakeAndRegisterTestInfo(
-      const char* test_suite_name, const char* name, const char* type_param,
-      const char* value_param, internal::CodeLocation code_location,
-      internal::TypeId fixture_class_id, internal::SetUpTestSuiteFunc set_up_tc,
+      const char* test_suite_name, const char* name, char size, const char* tag,
+      const char* type_param, const char* value_param,
+      internal::CodeLocation code_location, internal::TypeId fixture_class_id,
+      internal::SetUpTestSuiteFunc set_up_tc,
       internal::TearDownTestSuiteFunc tear_down_tc,
       internal::TestFactoryBase* factory);
 
   // Constructs a TestInfo object. The newly constructed instance assumes
   // ownership of the factory object.
   TestInfo(const std::string& test_suite_name, const std::string& name,
+           char size, const std::string& tag,
            const char* a_type_param,   // NULL if not a type-parameterized test
            const char* a_value_param,  // NULL if not a value-parameterized test
            internal::CodeLocation a_code_location,
@@ -811,8 +828,10 @@ class GTEST_API_ TestInfo {
   }
 
   // These fields are immutable properties of the test.
-  const std::string test_suite_name_;    // test suite name
-  const std::string name_;               // Test name
+  const std::string test_suite_name_;  // test suite name
+  const std::string name_;             // Test name
+  const std::string tag_;              // Test tag
+  const char size_;                    // Test size
   // Name of the parameter type, or NULL if this is not a typed or a
   // type-parameterized test.
   const std::unique_ptr<const ::std::string> type_param_;
@@ -825,6 +844,10 @@ class GTEST_API_ TestInfo {
   bool is_disabled_;          // True if and only if this test is disabled
   bool matches_filter_;       // True if this test matches the
                               // user-specified filter.
+  bool matches_tag_;          // True if this test matches the
+                              // user-specified tag.
+  bool matches_size_;         // True if this test matches the
+                              // user-specified size.
   bool is_in_another_shard_;  // Will be run in another shard.
   internal::TestFactoryBase* const factory_;  // The factory that creates
                                               // the test object
@@ -2343,15 +2366,15 @@ constexpr bool StaticAssertTypeEq() noexcept {
 // code.  GetTestTypeId() is guaranteed to always return the same
 // value, as it always calls GetTypeId<>() from the Google Test
 // framework.
-#define GTEST_TEST(test_suite_name, test_name)             \
-  GTEST_TEST_(test_suite_name, test_name, ::testing::Test, \
+#define GTEST_TEST(test_suite_name, test_name)                        \
+  GTEST_TEST_(test_suite_name, test_name, 'X', "ALL", ::testing::Test, \
               ::testing::internal::GetTestTypeId())
 
 // Define this macro to 1 to omit the definition of TEST(), which
 // is a generic name and clashes with some other libraries.
 #if !GTEST_DONT_DEFINE_TEST
 #define TEST(test_suite_name, test_name) GTEST_TEST(test_suite_name, test_name)
-#endif
+#endif // !GTEST_DONT_DEFINE_TEST
 
 // Defines a test that uses a test fixture.
 //
@@ -2382,7 +2405,7 @@ constexpr bool StaticAssertTypeEq() noexcept {
 // GOOGLETEST_CM0011 DO NOT DELETE
 #if !GTEST_DONT_DEFINE_TEST
 #define TEST_F(test_fixture, test_name)\
-  GTEST_TEST_(test_fixture, test_name, test_fixture, \
+  GTEST_TEST_(test_fixture, test_name, 'X', "ALL", test_fixture, \
               ::testing::internal::GetTypeId<test_fixture>())
 #endif  // !GTEST_DONT_DEFINE_TEST
 
@@ -2453,8 +2476,10 @@ GTEST_API_ std::string TempDir();
 //
 template <int&... ExplicitParameterBarrier, typename Factory>
 TestInfo* RegisterTest(const char* test_suite_name, const char* test_name,
-                       const char* type_param, const char* value_param,
-                       const char* file, int line, Factory factory) {
+                       char test_size, const char* test_tag,
+                       const char* type_param,
+                       const char* value_param, const char* file, int line,
+                       Factory factory) {
   using TestT = typename std::remove_pointer<decltype(factory())>::type;
 
   class FactoryImpl : public internal::TestFactoryBase {
@@ -2467,7 +2492,7 @@ TestInfo* RegisterTest(const char* test_suite_name, const char* test_name,
   };
 
   return internal::MakeAndRegisterTestInfo(
-      test_suite_name, test_name, type_param, value_param,
+      test_suite_name, test_name, test_size, test_tag, type_param, value_param,
       internal::CodeLocation(file, line), internal::GetTypeId<TestT>(),
       internal::SuiteApiResolver<TestT>::GetSetUpCaseOrSuite(file, line),
       internal::SuiteApiResolver<TestT>::GetTearDownCaseOrSuite(file, line),
