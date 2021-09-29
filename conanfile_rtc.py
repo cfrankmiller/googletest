@@ -3,7 +3,7 @@ from conans import ConanFile
 
 class GoogletestConan(ConanFile):
     name = "googletest"
-    version = "1.10.x"
+    version = "1.11.x"
     url = "https://github.com/Esri/googletest/tree/runtimecore"
     license = "https://github.com/Esri/googletest/blob/runtimecore/LICENSE"
     description = "Googletest - Google Testing and Mocking Framework."
