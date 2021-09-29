@@ -248,7 +248,7 @@ static std::string DeathTestThreadWarning(size_t thread_count) {
     msg << "detected " << thread_count << " threads.";
   }
   msg << " See "
-         "https://github.com/google/googletest/blob/master/googletest/docs/"
+         "https://github.com/google/googletest/blob/master/docs/"
          "advanced.md#death-tests-and-threads"
       << " for more explanation and suggested solutions, especially if"
       << " this is the last message you see before your test times out.";
@@ -865,7 +865,7 @@ class Arguments {
   }
 
   int size() {
-    return args_.size() - 1;
+    return static_cast<int>(args_.size()) - 1;
   }
 
  private:
@@ -891,18 +891,17 @@ int FuchsiaDeathTest::Wait() {
 
   // Register to wait for the child process to terminate.
   status_zx = child_process_.wait_async(
-      port, kProcessKey, ZX_PROCESS_TERMINATED, ZX_WAIT_ASYNC_ONCE);
+      port, kProcessKey, ZX_PROCESS_TERMINATED, 0);
   GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
 
   // Register to wait for the socket to be readable or closed.
   status_zx = stderr_socket_.wait_async(
-      port, kSocketKey, ZX_SOCKET_READABLE | ZX_SOCKET_PEER_CLOSED,
-      ZX_WAIT_ASYNC_ONCE);
+      port, kSocketKey, ZX_SOCKET_READABLE | ZX_SOCKET_PEER_CLOSED, 0);
   GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
 
   // Register to wait for an exception.
   status_zx = exception_channel_.wait_async(
-      port, kExceptionKey, ZX_CHANNEL_READABLE, ZX_WAIT_ASYNC_ONCE);
+      port, kExceptionKey, ZX_CHANNEL_READABLE, 0);
   GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
 
   bool process_terminated = false;
@@ -942,8 +941,7 @@ int FuchsiaDeathTest::Wait() {
         } else {
           GTEST_DEATH_TEST_CHECK_(status_zx == ZX_ERR_SHOULD_WAIT);
           status_zx = stderr_socket_.wait_async(
-              port, kSocketKey, ZX_SOCKET_READABLE | ZX_SOCKET_PEER_CLOSED,
-              ZX_WAIT_ASYNC_ONCE);
+              port, kSocketKey, ZX_SOCKET_READABLE | ZX_SOCKET_PEER_CLOSED, 0);
           GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
         }
       } else {
@@ -956,12 +954,12 @@ int FuchsiaDeathTest::Wait() {
   ReadAndInterpretStatusByte();
 
   zx_info_process_t buffer;
-  status_zx = child_process_.get_info(
-      ZX_INFO_PROCESS, &buffer, sizeof(buffer), nullptr, nullptr);
+  status_zx = child_process_.get_info(ZX_INFO_PROCESS, &buffer, sizeof(buffer),
+                                      nullptr, nullptr);
   GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
 
-  GTEST_DEATH_TEST_CHECK_(buffer.exited);
-  set_status(buffer.return_code);
+  GTEST_DEATH_TEST_CHECK_(buffer.flags & ZX_INFO_PROCESS_FLAG_EXITED);
+  set_status(static_cast<int>(buffer.return_code));
   return status();
 }
 
